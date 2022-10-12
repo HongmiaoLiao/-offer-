@@ -922,10 +922,812 @@ class NumMatrix {
 ## 字符串
 
 字符串解法大多类似数组，使用双指针、滑动窗口，但一般也会更多用到HashMap（或者字符到数组映射）。
-字符串的滑动窗口格式
+字符串的滑动窗口（一般会是两个字符串的比较）格式
 
 ```C++
-
+void slidingWindow(string s1, string s2) {
+    unordered_map<char, int> windows;   // 窗口内字符
+    unordered_map<char, int> need;  // 题目需求条件的记录
+    for (char c: s2) {
+        ++need[c];
+    }
+    int left = 0;
+    int right = 0;
+    int valid = 0;
+    while (right < s1.size()) {
+        char c = s1[right]; // c1是移入窗口的字符
+        ++right;    // 右移窗口
+        ...
+        while (left < right && ...) {// 收缩条件
+            char c2 = s[left];  // c2是移出窗口的字符
+            ++left;
+            ...
+        }
+    }
+}
 ```
 
 ### 014 字符串中的变位词
+
+方法：利用滑动窗口，先用HashMap记下s1（子串）需要的字符及其个数，然后，用滑动窗口遍历s2，右窗口扩大时，需要的字符数减少，左窗口收缩时，需要的字符串增加。当某个字符数减少到小于0，则左窗口收缩。此时如果窗口大小等于s1长度，说明窗口内字符就是s1的变位词。
+一次窗口扩大就对应窗口的收缩判断，如果右窗口读到不是s1内的字符时，会将使这个字符计数变为-1，左窗口会直接收缩到右窗口位置，即加回-1计数，此时窗口内没有s1不需要的字符。
+
+C++代码：
+
+```C++
+class Solution {
+public:
+    bool checkInclusion(string s1, string s2) {
+        int m = s1.size();
+        int n = s2.size();
+        if (m > n) {
+            return false;
+        }
+        // key: s1需要的字符， value：需要字符的个数
+        unordered_map<char, int> mp;
+        // 记下需要的字符
+        for (char c: s1) {
+            ++mp[c];
+        }
+        int left = 0;
+        int right = 0;
+        while (right < n) {
+            // 右窗口扩大，减掉需要字符的计数。
+            char c = s2[right];
+            --mp[c];
+            // 左窗口是否要收缩
+            while (mp[c] < 0) {
+                ++mp[s2[left]];// 加回需要的字符的计数
+                ++left;
+            }
+            // 长度满足要求，直接返回，说明存在变位词
+            if (right - left + 1 == m) {
+                return true;
+            }
+            ++right;
+        }
+        return false;
+    }
+};
+```
+
+Java代码：
+
+```Java
+class Solution {
+    public boolean checkInclusion(String s1, String s2) {
+        int m = s1.length();
+        int n = s2.length();
+        // 如果s1长度大于s2长度，s2不可能存在s1的变位词
+        if (m > n) {
+            return false;
+        }
+        // 只有小写字符，用数组代替HashMap
+        // 下标: s1需要的字符的映射， 值：需要字符的个数
+        int[] need = new int[26];
+        for (int i = 0; i < m; ++i) {
+            ++need[s1.charAt(i) - 'a'];
+        }
+        int left = 0;
+        int right = 0;
+        while (right < n) {
+            // 右窗口扩大，减掉需要字符的计数。
+            char c1 = s2.charAt(right);
+            --need[c1 - 'a'];
+            // 左窗口是否要收缩
+            while (need[c1 - 'a'] < 0) {
+                char c2 = s2.charAt(left);
+                ++need[c2 - 'a']; // 加回需要的字符的计数
+                ++left;
+            }
+            // 长度满足要求，直接返回，说明存在变位词
+            if (right - left + 1 == m) {
+                return true;
+            }
+            ++right;
+        }
+        return false;
+    }
+}
+```
+
+### 015字符串中的所有变位词
+
+方法：同014题
+
+C++代码：
+
+```C++
+class Solution {
+public:
+    vector<int> findAnagrams(string s, string p) {
+        vector<int> res;
+        int m = s.size();
+        int n = p.size();
+        if (n > m) {
+            return res;
+        }
+        // key: s1需要的字符， value：需要字符的个数
+        unordered_map<char, int> mp;
+        // 记下需要的字符
+        for (char c: p) {
+            ++mp[c];
+        }
+        int left = 0;
+        int right = 0;
+        while (right < m) {
+            // 右窗口扩大，减掉需要字符的计数。
+            char c = s[right];
+            --mp[c];
+            // 左窗口是否要收缩
+            while (mp[c] < 0) {
+                ++mp[s[left]];// 加回需要的字符的计数
+                ++left;
+            }
+            // 长度满足要求，说明存在变位词, 记下起始索引，即窗口左侧
+            if (right - left + 1 == n) {
+                // 与014唯一不同，这里记下起始索引，不直接返回
+                res.push_back(left);    
+            }
+            ++right;
+        }
+        return res;
+    }
+};
+```
+
+Java代码：
+
+```Java
+class Solution {
+    public List<Integer> findAnagrams(String s, String p) {
+        List<Integer> res = new ArrayList<>();
+        int m = p.length();
+        int n = s.length();
+        // 如果s1长度大于s2长度，s2不可能存在s1的变位词
+        if (m > n) {
+            return res;
+        }
+        // 只有小写字符，用数组代替HashMap
+        // 下标: s1需要的字符的映射， 值：需要字符的个数
+        int[] need = new int[26];
+        for (int i = 0; i < m; ++i) {
+            ++need[p.charAt(i) - 'a'];
+        }
+        int left = 0;
+        int right = 0;
+        while (right < n) {
+            // 右窗口扩大，减掉需要字符的计数。
+            char c1 = s.charAt(right);
+            --need[c1 - 'a'];
+            // 左窗口是否要收缩
+            while (need[c1 - 'a'] < 0) {
+                char c2 = s.charAt(left);
+                ++need[c2 - 'a']; // 加回需要的字符的计数
+                ++left;
+            }
+            // 长度满足要求，直接返回，说明存在变位词
+            if (right - left + 1 == m) {
+                // 与014唯一不同，这里记下起始索引，不直接返回
+                res.add(left);
+            }
+            ++right;
+        }
+        return res;
+    }
+}
+```
+
+### 016 不含重复字符的最长子字符串
+
+方法：滑动窗口，窗口右边扩大直到窗口内出现一个重复元素，记下此时的窗口大小-1，也就是不包含重复字符的连续子串长度。然后窗口左边收缩，直到排出窗口右侧的重复元素，此时窗口内无重复元素。以此循环
+
+C++代码：
+
+```C++
+class Solution {
+public:
+    int lengthOfLongestSubstring(string s) {
+        int res = 0;
+        // 记录窗口内的元素，用于判断是否出现重复
+        unordered_set<char> set;
+        int left = 0;
+        int right = 0;
+        int n = s.size();
+        while (right < n) {
+            // 窗口右边扩大直到窗口内出现一个重复元素
+            while (right < n && set.count(s[right]) == 0) {
+                set.insert(s[right]);
+                ++right;
+            }
+            // 此时窗口大小-1为此时不包含重复字符的连续子串长度，
+            // （一般窗口大小为right - left + 1)
+            res = max(res,right - left);
+            // 然后窗口左边收缩，直到排出窗口右侧的重复元素
+            while (left < right && set.count(s[right]) == 1) {
+                set.erase(s[left]);
+                ++left;
+            }
+        }
+        return res;
+    }
+};
+```
+
+Java代码：
+
+```Java
+class Solution {
+    public int lengthOfLongestSubstring(String s) {
+        int res = 0;
+        // 记录窗口内的元素，用于判断是否出现重复
+        Set<Character> set = new HashSet<>();
+        int left = 0;
+        int right = 0;
+        int n = s.length();
+        while (right < n) {
+            // 窗口右边扩大直到窗口内出现一个重复元素
+            while (right < n && !set.contains(s.charAt(right))) {
+                set.add(s.charAt(right));
+                ++right;
+            }
+            // 此时窗口大小-1为此时不包含重复字符的连续子串长度，
+            // （一般窗口大小为right - left + 1)
+            res = Math.max(res, right - left);
+            // 然后窗口左边收缩，直到排出窗口右侧的重复元素
+            while (left < right && right < n && set.contains(s.charAt(right))) {
+                set.remove(s.charAt(left));
+                ++left;
+            }
+        }
+        return res;
+    }
+}
+```
+
+### 017含有所有字符的最短字符串
+
+方法：滑动窗口，先用HashMap记下需要的字符和每个字符对应个数，然后使用另一个HashMap当作滑动窗口。如果窗口左侧的字符不是需要的字符，或者窗口左侧的那个字符的数量多于需要的字符，窗口左侧收缩。窗口左侧收缩后，遍历需要字符的HashMap，和窗口内的字符比较，如果满足包含条件，则记下子串的起始位置和长度，供结果返回。
+
+C++代码：
+
+```C++
+class Solution {
+public:
+    string minWindow(string s, string t) {
+        // 如果s串的长度更短，则不可能存在符合条件子串
+        if (s.size() < t.size()) {
+            return "";
+        }
+        // key：字符串中每个字符， value：字符个数
+        unordered_map<char, int> need; // 需要的字符计数
+        unordered_map<char, int> window;// 滑动窗口内的字符计数
+        // 先记下需要的字符及个数
+        for (char c: t) {
+            ++need[c];
+        }
+        int idx = 0;    // 答案子串的起始位置
+        int length = INT_MAX;   // 答案子串的长度
+        int left = 0; 
+        int right = 0;
+        int n = s.size();
+        while (right < n) {
+            char c = s[right];
+            ++window[c];
+            // 如果窗口左侧的字符不是需要的字符，或者窗口左侧的那个字符的数量多于需要的字符，窗口左侧收缩
+            while (left < right && (need.find(s[left]) == need.end() || window[s[left]] > need[s[left]])) {
+                --window[s[left]];
+                ++left;
+            }
+            // flag标记窗口内的字符是否满足，满足则记下起始坐标和长度
+            bool flag = true;
+            for (auto& [ch, cnt]: need) {
+                // 如果需要的字符不再窗口中，或者窗口内字符个数少于需要的个数，则不符合要求
+                if (window.find(ch) == window.end() || cnt > window[ch]) {
+                    flag = false;
+                    break;
+                }
+            }
+            if (flag) {
+                // 如果窗口更短，重新记下子串下标和长度
+                if (length > right - left + 1) {
+                    length = right - left + 1;
+                    idx = left;
+                }
+            }
+            ++right;
+        }
+        // 如果长度为INT_MAX,说明没有找到符合条件子串
+        return length == INT_MAX? "": s.substr(idx, length);
+    }
+};
+```
+
+Java代码
+
+```Java
+class Solution {
+    public String minWindow(String s, String t) {
+        // 如果s串的长度更短，则不可能存在符合条件子串
+        if (s.length() < t.length()) {
+            return "";
+        }
+        // key：字符串中每个字符， value：字符个数
+        Map<Character, Integer> need = new HashMap<>();// 需要的字符计数
+        Map<Character, Integer> window = new HashMap<>();// 滑动窗口内的字符计数
+        // 先记下需要的字符及个数
+        for (int i = 0; i < t.length(); ++i) {
+            need.put(t.charAt(i), need.getOrDefault(t.charAt(i), 0) + 1);
+        }
+        int begin = 0;    // 答案子串的起始位置
+        int length = Integer.MAX_VALUE; // 答案子串的长度
+        int left = 0;
+        int right = 0;
+        int n = s.length();
+        while (right < n) {
+            char c1 = s.charAt(right);
+            window.put(c1, window.getOrDefault(c1, 0) + 1);
+            // 如果窗口左侧的字符不是需要的字符，或者窗口左侧的那个字符的数量多于需要的字符，窗口左侧收缩
+            while (left < right && (!need.containsKey(s.charAt(left)) || window.get(s.charAt(left)) > need.get(s.charAt(left)))) {
+                char c2 = s.charAt(left);
+                window.put(c2, window.get(c2) - 1);
+                ++left;
+            }
+            // flag标记窗口内的字符是否满足，满足则记下起始坐标和长度
+            boolean flag = true;
+            for (Map.Entry<Character, Integer> entry: need.entrySet()) {
+                char ch = entry.getKey();   // 需要的字符
+                int cnt = entry.getValue(); // 需要字符的个数
+                // 如果需要的字符不在窗口中，或者窗口内字符个数少于需要的个数，则不符合要求
+                if (!window.containsKey(ch) || cnt > window.get(ch)) {
+                    flag = false;
+                    break;
+                }
+            }
+            if (flag) {
+                // 如果窗口更短，重新记下子串下标和长度
+                if (length > right - left + 1) {
+                    length = right - left + 1;
+                    begin = left;
+                }
+            }
+            ++right;
+        }
+        // 如果长度为INT_MAX,说明没有找到符合条件子串
+        return length == Integer.MAX_VALUE? "": s.substring(begin, begin + length);
+    }
+}
+```
+
+### 018有效的回文
+
+方法：使用双指针，从左边和右边同时向中间靠拢，如果是需要忽略的字符，先跳过
+
+C++代码：
+
+```C++
+class Solution {
+public:
+    // C++ 中的tolower() 函数将给定字符转换为小写。它在cctype 头文件中定义。
+    // C 库函数 void isalnum(int c) 检查所传的字符是否是字母和数字。
+    bool isPalindrome(string s) {
+        int left = 0;
+        int right = s.size()-1;
+        while (left < right) {
+            // 跳过左边的忽略字符
+            while (left < right && !isalnum(s[left])) {
+                ++left;
+            }
+            // 跳过右边的忽略字符
+            while (left < right && !isalnum(s[right])) {
+                --right;
+            }
+            if (left < right) {
+                // 全部转为小写，再比较是否相当，不相等说明不是回文串
+                if (tolower(s[left]) != tolower(s[right])) {
+                    return false;
+                }
+                ++left;
+                --right;
+            }
+        }   
+        return true; 
+    }
+};
+```
+
+Java代码
+
+```Java
+class Solution {
+    public boolean isPalindrome(String s) {
+        int left = 0;
+        int right = s.length() - 1;
+        while (left < right) {
+            // 跳过左边的忽略字符
+            while (left < right && !Character.isLetterOrDigit(s.charAt(left))) {
+                ++left;
+            }
+            // 跳过右边的忽略字符
+            while (left < right && !Character.isLetterOrDigit(s.charAt(right))) {
+                --right;
+            }
+            if (left < right) {
+                // 全部转为小写，再比较是否相当，不相等说明不是回文串
+                if (Character.toLowerCase(s.charAt(left)) != Character.toLowerCase(s.charAt(right))) {
+                    return false;
+                }
+                ++left;
+                --right;
+            }
+        }
+        return true;
+    }
+}
+```
+
+### 019 最多删除一个字符得到回文
+
+方法：双指针，指向字符串头尾。两边同时向中间靠拢，如果出现了不相同的字符，考虑删除左边指针的一个字符或者删除右边指针的一个字符（实际应用时，跳过当作删除），分别判断剩下的字符是否是回文串。如果删除左边指针指向字符后的字符串是回文，或删除右边指针指向字符后的字符串是回文，这满足最多删除一个字符能得到回文串。
+
+C++代码：
+
+```C++
+class Solution {
+public:
+    bool validPalindrome(string s) {
+        int left = 0;
+        int right = s.size()-1;
+        // 出现不同字符使，判断删除左指针指向字符或删除右指针指向的字符之后，是否是回文串。
+        bool resLeft = true;  
+        bool resRight = true;
+        while (left < right) {
+            // 两边相同时，向中间靠拢。
+            if (s[left] == s[right]) {
+                ++left;
+                --right;
+            } else {
+                // 两边出现了一个不同字符时，分别判断
+                // 删除（跳过）左指针字符，进行向中间考虑判断
+                int i = left + 1;
+                int j = right;
+                while (i < j) {
+                    // 出现不相同字符，不是回文串，直接结束循环
+                    if (s[i++] != s[j--]) {
+                        resLeft = false;
+                        break;
+                    }
+                }
+                // 删除（跳过）右指针字符，进行向中间考虑判断
+                i = left;
+                j = right - 1;
+                while (i < j) {
+                    // 出现不相同字符，不是回文串，直接结束循环
+                    if (s[i++] != s[j--]) {
+                        resRight = false;
+                        break;
+                    }
+                }
+                // 删除一个还是回文，则满足题目条件
+                return resRight || resLeft;
+            }
+        }
+        // 不删除一个字符串也是回文
+        return true;
+    }
+};
+```
+
+Java代码
+
+```Java
+class Solution {
+    public boolean validPalindrome(String s) {
+        int left = 0;
+        int right = s.length() - 1;
+        // 出现不同字符使，判断删除左指针指向字符或删除右指针指向的字符之后，是否是回文串。
+        boolean resLeft = true;
+        boolean resRight = true;
+        while (left < right) {
+            // 两边相同时，向中间靠拢。
+            if (s.charAt(left) == s.charAt(right)) {
+                ++left;
+                --right;
+            } else {
+                // 两边出现了一个不同字符时，分别判断
+                // 删除（跳过）左指针字符，进行向中间考虑判断
+                int i = left + 1;
+                int j = right;
+                while (i < j) {
+                    // 出现不相同字符，不是回文串，直接结束循环
+                    if (s.charAt(i) != s.charAt(j)) {
+                        resLeft = false;
+                        break;
+                    }
+                    ++i;
+                    --j;
+                }
+                // 删除（跳过）右指针字符，进行向中间考虑判断
+                i = left;
+                j = right - 1;
+                while (i < j) {
+                    // 出现不相同字符，不是回文串，直接结束循环
+                    if (s.charAt(i) != s.charAt(j)) {
+                        resRight = false;
+                        break;
+                    }
+                    ++i;
+                    --j;
+                }
+                // 删除一个还是回文，则满足题目条件
+                return resRight || resLeft;
+            }
+        }
+        // 不删除一个字符串也是回文
+        return true;
+    }
+}
+```
+
+### 020 回文子字符串的个数
+
+方法：双指针，从遍历字符串每一个位置，从每一个位置开始，同时向两边展开，展开过程有两种情况，如果是奇数，则以当前位置为轴向相比展开；如果是偶数，则以这个位置和这个位置右边为中心，同时向两边展开。
+
+C++代码：
+
+```C++
+class Solution {
+public:
+    int countSubstrings(string s) {
+        int res = 0;
+        int n = s.size();
+        // 奇数字符个数的子串有n个中心轴，偶数字符个数的子串有n-1个中心
+        // 遍历次数为 2 * n - 1， 这样在遍历过程中，除2，奇数后偶数的操作变为一致
+        for (int i = 0; i < 2*n-1; ++i) {   
+            // left 和right要么相同（奇数）， 要么相邻（偶数）
+            int left = i / 2;
+            int right = i / 2 + i % 2;
+            while (left >= 0 && right < n && s[left] == s[right]) {
+                --left;
+                ++right;
+                ++res;
+            }
+        }
+        return res;
+    }
+};
+```
+
+Java代码
+
+```Java
+class Solution {
+    public int countSubstrings(String s) {
+        int n = s.length();
+        int res = 0;
+        // 奇数字符个数的子串有n个中心轴，偶数字符个数的子串有n-1个中心
+        // 遍历次数为 2 * n - 1， 这样在遍历过程中，除2，奇数后偶数的操作变为一致
+        for (int i = 0; i < n * 2 - 1; ++i) {
+            // left 和right要么相同（奇数）， 要么相邻（偶数）
+            int left = i / 2;
+            int right = i / 2 + i % 2;
+            while (left >= 0 && right < n && s.charAt(left) == s.charAt(right)) {
+                --left;
+                ++right;
+                ++res;
+            }
+        }
+        return res;
+    }
+}
+```
+
+## 链表
+
+链表常用方法为双指针，或者快慢指针。
+技巧：
+
+* 找中间节点的一个技巧为两个指针，一个一次两步、一个一次一步，块指针到末尾时，慢指针指向重点
+* 可以使用头结点之前的一个节点接上头结点，使对头结点的操作和其他所有节点一致
+* 注意使用头插法和尾插法，头插法可以起到使节点逆序重排的作用
+
+### 021 删除链表的倒数第n个节点
+
+方法：建立一个头结点使头结点和其他节点操作一致，使用两个指针，一个指针先移动N步，另一个指针再和快指针同时移动，前一个指针到末尾了，另一个指针就是指向倒数第N个节点
+
+C++代码：
+
+```C++
+class Solution {
+public:
+    ListNode* removeNthFromEnd(ListNode* head, int n) {
+        // 头前节点指向头结点
+        ListNode* first = new ListNode(0, head);
+        ListNode* fast = first;
+        ListNode* lastN = first;
+        // 一个指针先移动N步
+        for (int i = 0; i < n; ++i) {
+            fast = fast->next;
+        }
+        // 两指针同时移动
+        // 这里是fast->next到达末尾，此时另一个指针指向倒数第一个节点的前一个节点，这样方便删除
+        while (fast->next != nullptr) {
+            lastN = lastN->next;
+            fast = fast->next;
+        }
+        // 删除节点，即直接断开该结点的连接即可
+        lastN->next = lastN->next->next;
+        // 返回原头结点
+        return first->next;
+    }
+};
+```
+
+Java代码
+
+```Java
+/**
+ * Definition for singly-linked list.
+ * public class ListNode {
+ *     int val;
+ *     ListNode next;
+ *     ListNode() {}
+ *     ListNode(int val) { this.val = val; }
+ *     ListNode(int val, ListNode next) { this.val = val; this.next = next; }
+ * }
+ */
+class Solution {
+    public ListNode removeNthFromEnd(ListNode head, int n) {
+        // 头前节点指向头结点
+        ListNode preHead = new ListNode(0, head);
+        ListNode fast = preHead;
+        ListNode lastN = preHead;
+        // 一个指针先移动N步
+        for (int i = 0; i < n; ++i) {
+            fast = fast.next;
+        }
+        // 两指针同时移动
+        // 这里是fast->next到达末尾，此时另一个指针指向倒数第一个节点的前一个节点，这样方便删除
+        while (fast.next != null) {
+            lastN = lastN.next;
+            fast = fast.next;
+        }
+        // 删除节点，即直接断开该结点的连接即可
+        lastN.next = lastN.next.next;
+        return preHead.next;
+    }
+}
+```
+
+### 022 链表环的入口节点
+
+方法：快慢指针，快指针一次走两格，慢指针一次走一格。如果快指针到链表末端，说明链表无环。否则，因为每走一次，快指针和慢指针的间距+1，快指针终会追上慢指针，即到达同一个点。
+设头结点到入口距离为$a$，环的大小为$b$， 入口到相遇的点的距离为$l$，此时相遇点的另一个方向到入口的距离为$b-l$。此时，慢指针走了$a+l$，快指针走了$a+l+nb$，快指针走的距离是慢指针两倍，有$2a+2l = a + l + nb$，于是有$a = (n-1)b + (b-l)$，即头结点到入口的距离为$n-1$圈加上相遇点到入口点的距离。此时一个指针指向头结点，和慢指针同步移动，当慢指针走了$(n-1)b + (b-l)$步时，另一个指针也走了这么多步，即走了$a$步，他们会在入口点相遇。
+
+C++代码：
+
+```C++
+class Solution {
+public:
+    ListNode *detectCycle(ListNode *head) {
+        // 头指针为空或只有一个结点，不可能有环
+        if (head == NULL || head->next == NULL) {
+            return NULL;
+        }
+        ListNode* slow = head->next;
+        ListNode* fast = head->next->next;
+        while (slow != fast) {
+            // 快指针到了末尾，无环
+            if (fast == NULL || fast->next==NULL) {
+                return NULL;
+            }
+            // 快慢指针
+            slow = slow->next;
+            fast = fast->next->next;
+        }
+        // 另一个指针指向头结点，两指针同时移动，交点即为入口点
+        ListNode* res = head;
+        while (res != slow) {
+            res = res->next;
+            slow = slow->next;
+        }
+        return res;
+    }
+};
+```
+
+Java代码
+
+```Java
+public class Solution {
+    public ListNode detectCycle(ListNode head) {
+        // 头指针为空或只有一个结点，不可能有环
+        if (head == null || head.next == null) {
+            return null;
+        }
+        ListNode slow = head.next;
+        ListNode fast = head.next.next;
+        while (slow != fast) {
+            // 快指针到了末尾，无环
+            if (fast == null || fast.next == null) {
+                return null;
+            }
+            // 快慢指针
+            slow = slow.next;
+            fast = fast.next.next;
+        }
+        // 另一个指针指向头结点，两指针同时移动，交点即为入口点
+        ListNode res = head;
+        while (res != slow) {
+            res = res.next;
+            slow = slow.next;
+        }
+        return res;
+    }
+}
+```
+
+### 023 两个链表的第一个重合结点
+
+方法：双指针，两个指针容两个头结点同时移动，当到达末尾时，从另一个头结点开始继续移动，最终两个指针会在交点相遇，如果没有交点，两个指针都会指向末尾的null
+
+C++代码：
+
+```C++
+class Solution {
+public:
+    ListNode *getIntersectionNode(ListNode *headA, ListNode *headB) {
+        if (headA == NULL || headB == NULL) {
+            return NULL;
+        }
+        ListNode* nodeA = headA;
+        ListNode* nodeB = headB;
+        while (nodeA != nodeB) {
+            if (nodeA == NULL) {
+                // 从A开始移动的节点到达末尾，继续从B开始移动
+                nodeA = headB;
+            } else {
+                nodeA = nodeA->next;
+            }
+            if (nodeB == NULL) {
+                // 从B开始移动的节点到达末尾，继续从A开始移动
+                nodeB = headA;
+            } else {
+                nodeB = nodeB->next;
+            }  
+        }
+        // 最终两个指针会在交点相遇，如果没有交点，两个指针都会指向末尾的null
+        return nodeA;
+    }
+};
+```
+
+Java代码
+
+```Java
+public class Solution {
+    public ListNode getIntersectionNode(ListNode headA, ListNode headB) {
+        if (headA == null || headB == null) {
+            return null;
+        }
+        ListNode pA = headA;
+        ListNode pB = headB;
+        while (pA != pB) {
+            if (pA == null) {
+                // 从A开始移动的节点到达末尾，继续从B开始移动
+                pA = headB;
+            } else {
+                pA = pA.next;
+            }
+            if (pB == null) {
+                // 从B开始移动的节点到达末尾，继续从A开始移动
+                pB = headA;
+            } else {
+                pB = pB.next;
+            }
+        }
+        // 最终两个指针会在交点相遇，如果没有交点，两个指针都会指向末尾的null
+        return pA;
+    }
+}
+```
