@@ -1731,3 +1731,1263 @@ public class Solution {
     }
 }
 ```
+
+### 024 反转链表
+
+方法：建立一个头结点之前的结点指向头结点，使用头插法将链表反转
+
+C++代码：
+
+```C++
+class Solution {
+public:
+    ListNode* reverseList(ListNode* head) {
+        // 新建一个结点，再此结点上使用头插法
+        ListNode* preHead = new ListNode();
+        // head指针一直向后移动
+        while (head != nullptr) {
+            ListNode* tmp = head->next;   // 记下当前的下一个结点
+            head->next = preHead->next;     // 进行头插
+            preHead->next = head;   
+            head = tmp; // 向下移动一个节点
+        }
+        return preHead->next;
+    }
+};
+```
+
+Java代码
+
+```Java
+class Solution {
+    public ListNode reverseList(ListNode head) {
+        // 新建一个结点，再此结点上使用头插法
+        ListNode preHead = new ListNode();
+        ListNode cur = head;    // 指向当前要操作的节点
+        while (cur != null) {
+            ListNode tmp = cur.next;// 记下当前的下一个结点
+            cur.next = preHead.next; // 进行头插
+            preHead.next = cur;
+            cur = tmp;// 向下移动一个节点
+        }
+        // 返回反转后的头结点
+        return preHead.next;
+    }
+}
+```
+
+### 025 链表中的两数相加
+
+方法：使用两个栈将两个链表结点（或值）放到栈中，然后新建一个链表，使用头插法，从栈中逐个弹出计算，同时维护一个进位位进行下次计算。如果一个栈为空，则弹出0进行计算，知道两个链表都为空。最后再判断是否还有进位，有的话记得加上。
+
+C++代码：
+
+```C++
+class Solution {
+public:
+    ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {
+        ListNode* preHead = new ListNode();
+        stack<ListNode*> st1;
+        stack<ListNode*> st2;
+        // 先把两个链表的所有结点放到两个栈中
+        while(l1 != nullptr) {
+            st1.push(l1);
+            l1 = l1->next;
+        }
+        while (l2 != nullptr) {
+            st2.push(l2);
+            l2 = l2->next;
+        }
+        int c = 0;  // 进位位
+        // 逐个弹出计算
+        while (!st1.empty() || !st2.empty()) {
+            int val1 = 0;   // 如果链表为空，弹出的为0
+            if (!st1.empty()) {
+                val1 = st1.top()->val;
+                st1.pop();
+            }
+            int val2 = 0;   // 如果链表为空，弹出的为0
+            if (!st2.empty()) {
+                val2 = st2.top()->val;
+                st2.pop();
+            }
+            int val = val1 + val2 + c;  // 对应两点相加
+            // 如果有进位，则需要记下
+            if (val >= 10) {
+                c = 1;
+                val = val % 10;
+            } else {
+                c = 0;
+            }
+            // 头插法插入新结点
+            ListNode* node = new ListNode(val);
+            node->next = preHead->next;
+            preHead->next = node;
+        }
+        // 如果最后还有进位，需要加上进位位
+        if (c != 0) {
+            ListNode* node = new ListNode(1);
+            node->next = preHead->next;
+            preHead->next = node;  
+        }
+        // 返回实际头结点
+        return preHead->next;
+    }
+};
+```
+
+Java代码
+
+```Java
+class Solution {
+    public ListNode addTwoNumbers(ListNode l1, ListNode l2) {
+        ListNode preHead = new ListNode();
+        Deque<ListNode> stack1 = new ArrayDeque<>();
+        Deque<ListNode> stack2 = new ArrayDeque<>();
+        // 先把两个链表的所有结点放到两个栈中
+        while (l1 != null) {
+            stack1.push(l1);
+            l1 = l1.next;
+        }
+        while (l2 != null) {
+            stack2.push(l2);
+            l2 = l2.next;
+        }
+        int c = 0;  // 进位位
+        // 逐个弹出计算
+        while (!stack1.isEmpty() || ! stack2.isEmpty()) {
+            int val1 = 0;   // 如果链表为空，弹出的为0
+            if (!stack1.isEmpty()) {
+                val1 = stack1.pop().val;
+            }
+            int val2 = 0;   // 如果链表为空，弹出的为0
+            if (!stack2.isEmpty()) {
+                val2 = stack2.pop().val;
+            }
+            int val = val1 + val2 + c;  // 对应两点相加
+            // 如果有进位，则需要记下
+            if (val >= 10) {
+                c = 1;
+                val = val % 10;
+            } else {
+                c = 0;
+            }
+            // 头插法插入新结点
+            ListNode node = new ListNode(val);
+            node.next = preHead.next;
+            preHead.next = node;
+        }
+        // 如果最后还有进位，需要加上进位位
+        if (c != 0) {
+            ListNode node = new ListNode(1);
+            node.next = preHead.next;
+            preHead.next = node;
+        }
+        // 返回实际头结点
+        return preHead.next;
+    }
+}
+```
+
+### 026 重排链表
+
+方法：找到中间结点，再反转后半部分的链表，然后两部分链表交替连接。
+
+C++代码：
+
+```C++
+class Solution {
+public:
+    void reorderList(ListNode* head) {
+        ListNode* l1 = head;
+        ListNode* midNode = findMid(head);  // 找到中间结点
+        //反转后半部分，注意这里从中间结点的后一个结点开始
+        ListNode* l2 = reverseList(midNode->next);  
+        midNode->next = nullptr;    // 为了方便判断，断开前半部分的末尾连接
+        // 交替连接重排链表
+        while (l1 != nullptr && l2 != nullptr) {
+            ListNode* tmp1 = l1->next;  // 记下下一个结点
+            ListNode* tmp2 = l2->next;
+            l1->next = l2;  // 连到另一部分结点上
+            l1 = tmp1;  // 移动到下一个结点
+            l2->next = l1;
+            l2 = tmp2;
+        }
+    }
+
+    // 使用快慢指针找到中间结点
+    ListNode* findMid(ListNode* head) {
+        ListNode* fast = head;
+        ListNode* slow = head;
+        while (fast->next != nullptr && fast->next->next != nullptr) {
+            fast = fast->next->next;
+            slow = slow->next;
+        }
+        return slow;
+    }
+
+    // 反转链表
+    ListNode* reverseList(ListNode* head) {
+        ListNode* ahead = new ListNode();
+        while (head != nullptr) {
+            ListNode* tmp = head->next;
+            head->next = ahead->next;
+            ahead->next = head;
+            head = tmp;
+        }
+        return ahead->next;
+    }
+};
+```
+
+Java代码
+
+```Java
+class Solution {
+    public void reorderList(ListNode head) {
+        ListNode l1 = head;
+        ListNode midNode = findMid(head); // 找到中间结点
+        //反转后半部分，注意这里从中间结点的后一个结点开始
+        ListNode l2 = reverseList(midNode.next);
+        midNode.next = null;    // 为了方便判断，断开前半部分的末尾连接
+        // 交替连接重排链表
+        while (l1 != null && l2 != null) {
+            ListNode tmp1 = l1.next;    // 记下下一个结点
+            ListNode tmp2 = l2.next;
+            l1.next = l2;   // 连到另一部分结点上
+            l1 = tmp1;   // 移动到下一个结点
+            l2.next = l1;
+            l2 = tmp2;
+        }
+    }
+
+    // 使用快慢指针找到中间结点
+    ListNode findMid(ListNode head) {
+        ListNode fast = head;
+        ListNode slow = head;
+        while (fast.next != null && fast.next.next != null) {
+            fast = fast.next.next;
+            slow = slow.next;
+        }
+        return slow;
+    }
+
+    // 反转链表
+    public ListNode reverseList(ListNode head) {
+        // 新建一个结点，再此结点上使用头插法
+        ListNode preHead = new ListNode();
+        ListNode cur = head;    // 指向当前要操作的节点
+        while (cur != null) {
+            ListNode tmp = cur.next;// 记下当前的下一个结点
+            cur.next = preHead.next; // 进行头插
+            preHead.next = cur;
+            cur = tmp;// 向下移动一个节点
+        }
+        // 返回反转后的头结点
+        return preHead.next;
+    }
+}
+```
+
+### 027 回文链表
+
+方法：找到中间结点，反转后半部分结点，然后从中间和头结点同时开始向后逐个判断。
+
+C++代码：
+
+```C++
+class Solution {
+public:
+    bool isPalindrome(ListNode* head) {
+        ListNode* slow = head;
+        ListNode* fast = head;
+        // 快慢指针找到中间结点
+        while (fast != nullptr && fast->next != nullptr) {
+            fast = fast->next->next;
+            slow = slow->next;
+        }
+        // 如果快指针为空，说明结点个数是偶数个
+        // 如果快指针的下一个结点为空，说明结点个数是奇数个
+        if (fast != nullptr) {
+            slow = slow->next;      // 奇数个节点，从下一个开始比较
+        }
+        // 反转后半部分
+        ListNode* l2 = reverseList(slow);
+        ListNode* l1 = head;
+        // 同时向后移动进行判断
+        while (l2 != nullptr) {
+            if (l1->val != l2->val) {
+                return false;
+            }
+            l1 = l1->next;
+            l2 = l2->next;
+        }
+        return true;
+    }
+
+    // 反转链表
+    ListNode* reverseList(ListNode* head) {
+        ListNode* ahead = new ListNode();
+        while (head != nullptr) {
+            ListNode* tmp = head->next;
+            head->next = ahead->next;
+            ahead->next = head;
+            head = tmp;
+        }
+        return ahead->next;
+    }
+};
+```
+
+Java代码
+
+```Java
+class Solution {
+    public boolean isPalindrome(ListNode head) {
+        ListNode slow = head;
+        ListNode fast = head;
+        // 快慢指针找到中间结点
+        while (fast != null && fast.next != null) {
+            fast = fast.next.next;
+            slow = slow.next;
+        }
+        // 如果快指针为空，说明结点个数是偶数个
+        // 如果快指针的下一个结点为空，说明结点个数是奇数个
+        if (fast != null) {
+            slow = slow.next;   // 奇数个节点，从下一个开始比较
+        }
+        // 反转后半部分
+        ListNode l2 = reverseList(slow);
+        ListNode l1 = head;
+        // 同时向后移动进行判断
+        while (l2 != null) {
+            if (l1.val != l2.val) {
+                return false;
+            }
+            l1 = l1.next;
+            l2 = l2.next;
+        }
+        return true;
+    }
+
+    // 反转链表
+    public ListNode reverseList(ListNode head) {
+        // 新建一个结点，再此结点上使用头插法
+        ListNode preHead = new ListNode();
+        ListNode cur = head;    // 指向当前要操作的节点
+        while (cur != null) {
+            ListNode tmp = cur.next;// 记下当前的下一个结点
+            cur.next = preHead.next; // 进行头插
+            preHead.next = cur;
+            cur = tmp;// 向下移动一个节点
+        }
+        // 返回反转后的头结点
+        return preHead.next;
+    }
+}
+```
+
+### 028 展平多级双向链表
+
+方法：
+
+C++代码：
+
+```C++
+class Solution {
+public:
+    Node* flatten(Node* head) {
+        dfs(head);
+        return head;
+    }
+
+    // 深度优先遍历，每次返回每一级链表下的最后一个结点
+    Node* dfs(Node* node) {
+        Node* last = node;  // 用来指示本次循环，也就是本级链表的最后一个结点
+        while (node != nullptr) {
+            if (node->child == nullptr) {
+                // 没有分级结点，往后遍历
+                last = node;
+                node = node->next;
+            } else {
+                // 存在下一级链表
+                Node* tmp = node->next; // 记录上一级结点的后一个结点
+                Node* childLast = dfs(node->child); // 进入递归，获得下一级结点的最后一个结点
+                // 连接下一级结点的头部
+                node->next = node->child;   // 用上一级结点连上从他分出的下一级结点
+                node->child->prev = node;   // 双向连接
+                node->child = nullptr;  // 将分级的指针置为空
+                // 连接下一级的尾部
+                if (childLast != nullptr) {
+                    // 如果下一级的结点不为空，则连接上一级分叉位置
+                    // 也就是相当于接入上一级链表的中间
+                    childLast ->next = tmp;
+                }
+                if (tmp != nullptr) {
+                    // 双向链表，需要往前连接
+                    tmp->prev = childLast;
+                }
+                last = node;    // 记录最后一个结点，这个在前面，才能保证node为null时正常返回
+                node = childLast;   // 直接移动到接入的最后一个结点
+            }
+        }
+        return last;
+    }
+};
+```
+
+Java代码
+
+```Java
+class Solution {
+    public Node flatten(Node head) {
+        dfs(head);
+        return head;
+    }
+
+    // 深度优先遍历，每次返回每一级链表下的最后一个结点
+    Node dfs(Node node) {
+        Node last = node;   // 用来指示本次循环，也就是本级链表的最后一个结点
+        while (node != null) {
+            if (node.child == null) {
+                // 没有分级结点，往后遍历
+                last = node;
+                node = node.next;
+            } else {
+                // 存在下一级链表
+                Node tmp = node.next;   // 记录上一级结点的后一个结点
+                Node childLast = dfs(node.child);   // 进入递归，获得下一级结点的最后一个结点
+                // 连接下一级结点的头部
+                node.next = node.child;// 用上一级结点连上从他分出的下一级结点
+                node.child.prev = node;// 双向连接
+                node.child = null;  // 将分级的指针置为空
+                // 连接下一级的尾部
+                if (childLast != null) {
+                    childLast.next = tmp;
+                }
+                if (tmp != null) {
+                    tmp.prev = childLast;
+                }
+                last = node;    // 记录最后一个结点，这个在前面，才能保证node为null时正常返回
+                node = childLast;   // 直接移动到接入的最后一个结点
+            }
+        }
+        return last;
+    }
+}
+```
+
+### 029 排序的循环链表
+
+方法：首先判断循环链表结点的个数，只有0个或1个结点直接插入返回。然后使用两个指针同时移动，找到插入位置，插入位置分三种情况：1：插入值在两指针之间。 2：前指针的值大于后指针的值，且插入的值大于前指针的值，此时插入数据为链表最大值，插入到两指针之间。3：前指针的值大于后指针的值，且插入的值小于后指针的值，此时插入数据为链表最小，插入到两指针之间。2和3情况时前后指针指向原有最大值和最小值。
+
+C++代码：
+
+```C++
+class Solution {
+public:
+    Node* insert(Node* head, int insertVal) {
+        Node* ins = new Node(insertVal);    // 新建插入结点
+        // 如果链表为空，插入结点自己连接上返回
+        if (head == NULL) {
+            ins->next = ins;
+            return ins;
+        }
+        // 如果只有1个结点，插入后返回。
+        if (head->next == head) {
+            head->next = ins;
+            ins->next = head;
+            return head;
+        }
+        // 当前结点从头开始遍历
+        Node* cur = head;
+        // 结束条件是插入值在当前指针和下一指针之间。
+        while (!(cur->next->val > insertVal && cur->val <= insertVal)) {
+            cur = cur->next;
+            Node* tmp = cur;
+            // 如果出现重复值，往后到最后一个重复值。后一个条件防止全是重复值导致的无限循环
+            while (cur->val == cur->next->val && cur->next != tmp) {
+                cur = cur->next;
+            }
+            // 到了链表中最大值和最小值位置，则可以直接在这中间插入
+            if (cur->next->val <= cur->val && (insertVal >= cur->val || insertVal <= cur->next->val)) {
+                break;
+            }
+        }
+        // 插入结点
+        ins->next = cur->next;
+        cur->next = ins;
+        return head;
+    }
+};
+```
+
+Java代码
+
+```Java
+class Solution {
+    public Node insert(Node head, int insertVal) {
+        Node ins = new Node(insertVal); // 新建插入结点
+        // 如果链表为空，插入结点自己连接上返回
+        if (head == null) {
+            ins.next = ins;
+            return ins;
+        }
+        // 如果只有1个结点，插入后返回。
+        if (head.next == head) {
+            head.next = ins;
+            ins.next = head;
+            return head;
+        }
+        // 当前结点从头开始遍历
+        Node cur = head;
+        // 结束条件是插入值在当前指针和下一指针之间。
+        while (!(cur.next.val >= insertVal && cur.val <= insertVal)) {
+            cur = cur.next;
+            Node tmp = cur;
+            // 如果出现重复值，往后到最后一个重复值。后一个条件防止全是重复值导致的无限循环
+            while (cur.val == cur.next.val && cur.next != tmp) {
+                cur = cur.next;
+            }
+            // 到了链表中最大值和最小值位置，则可以直接在这中间插入
+            if (cur.next.val <= cur.val && (insertVal >= cur.val || insertVal <= cur.next.val)) {
+                break;
+            }
+        }
+        // 插入结点
+        ins.next = cur.next;
+        cur.next = ins;
+        return head;
+    }
+}
+```
+
+## 哈希表
+
+### 030 插入、删除和随机访问都是O(1)的容器
+
+方法：使用一个可随机访问的可变容器（C++ vector， Java List）作为基本容器，然后使用一个HashMap记录插入的数字以及下标。在插入时，插入到容器的最后一个位置，并记下下标；删除时，用删除数的位置和最后一个位置交换，然后弹出最后一个位置即可。访问是就访问在容器大小内的一个随机下标。
+
+C++代码：
+
+```C++
+class RandomizedSet {
+private:
+    unordered_map<int, int> map;// key插入的数，value下标
+    vector<int> nums;// 存放的基本容器
+public:
+    // 看了答案能轻松默写出来
+    /** Initialize your data structure here. */
+    RandomizedSet() {
+
+    }
+    
+    /** Inserts a value to the set. Returns true if the set did not already contain the specified element. */
+    bool insert(int val) {
+        if (map.count(val)) {
+            // 已经存在
+            return false;
+        }
+        // 插入到最后一个位置
+        int n = nums.size();
+        nums.push_back(val);
+        map[val] = n;   // 记录插入的数以及位置
+        return true;
+    }
+    
+    /** Removes a value from the set. Returns true if the set contained the specified element. */
+    bool remove(int val) {
+        if (!map.count(val)) {
+            // 不存在
+            return false;
+        }
+        int idx = map[val]; // 获取删除数的下标
+        int last = nums.back(); // 获取最后一个数的数值
+        nums[idx] = last;   // 用最后一个数覆盖，相当于删除了这个数
+        map[last] = idx;    // 重新记下原来最后一个数的新下标
+        map.erase(val); // 删除HashMap的记录
+        nums.pop_back();    // 弹出最后一个数
+        return true;
+
+    }
+    
+    /** Get a random element from the set. */
+    int getRandom() {
+        // 在容器大小访问随机访问
+        return nums[rand()%nums.size()];
+    }
+};
+```
+
+Java代码
+
+```Java
+class RandomizedSet {
+    public List<Integer> nums;// 存放的基本容器
+    public Map<Integer, Integer> map;// key插入的数，value下标
+    Random random;
+
+    /** Initialize your data structure here. */
+    public RandomizedSet() {
+        nums = new ArrayList<>();// 存放的基本容器
+        map = new HashMap();// key插入的数，value下标
+        random = new Random();
+    }
+    
+    /** Inserts a value to the set. Returns true if the set did not already contain the specified element. */
+    public boolean insert(int val) {
+        if (map.containsKey(val)) {
+            // 已经存在
+            return false;
+        }
+        // 插入到最后一个位置
+        int n = nums.size();
+        nums.add(val);
+        map.put(val, n);    // 记录插入的数以及位置
+        return true;
+    }
+    
+    /** Removes a value from the set. Returns true if the set contained the specified element. */
+    public boolean remove(int val) {
+        if (!map.containsKey(val)) {
+            // 不存在
+            return false;
+        }
+        int idx = map.get(val);// 获取删除数的下标
+        int last = nums.get(nums.size()-1);// 获取最后一个数的数值
+        nums.set(idx, last);// 用最后一个数覆盖，相当于删除了这个数
+        map.put(last, idx); // 重新记下原来最后一个数的新下标
+        map.remove(val);// 删除HashMap的记录
+        nums.remove(nums.size()-1);// 弹出最后一个数
+        return true;
+    }
+    
+    /** Get a random element from the set. */
+    public int getRandom() {
+        return nums.get(random.nextInt(nums.size()));
+    }
+}
+```
+
+### 031 最近最少使用缓存
+
+方法：使用HashMap + 双向链表，HashMap记录链表中的每个结点，键为链表结点的键值，值为链表结点的指针（引用），这样能直接根据要访问的键找到要找的结点，使用双向链表也是便于结点的增加移动和删除。在每次获取键对应值时，将该结点移动到链表头部。当每次放进新的键值时，如果链表已经存在，将其移动到链表头部，否则，在两边头部插入数据，增加链表大小的计数，并记录到HashMap中，此时如果链表大小超过缓存大小，从链表尾部移除元素
+
+C++代码：
+
+```C++
+// 构建双向链表
+struct DLinkedNode {
+    int key;
+    int val;
+    DLinkedNode* prev;
+    DLinkedNode* next;
+    // 有参构造
+    DLinkedNode(int key, int val):key(key), val(val){
+
+    }
+    // 无参构造
+    DLinkedNode() {
+
+    }
+};
+
+class LRUCache {
+public:
+    DLinkedNode* head;
+    DLinkedNode* tail;
+    int capacity;   // 缓存容量
+    int size;   // 链表大小（不包含头尾结点）
+    unordered_map<int, DLinkedNode*> mp; // key: node point
+
+    // 初始化双向链表
+    LRUCache(int capacity): size(0), capacity(capacity) {
+        head = new DLinkedNode();
+        tail = new DLinkedNode();
+        head->next = tail;
+        tail->prev = head;
+    }
+    
+    int get(int key) {
+        if (mp.find(key) != mp.end()) {
+            // 如果存在，获取后移动到头部
+            moveToHead(mp[key]);
+            return mp[key]->val;
+        }
+        return -1;
+    }
+    
+    void put(int key, int value) {
+        if (mp.find(key) == mp.end()) { // 缓存不存在key
+            DLinkedNode* node = new DLinkedNode(key, value);
+            mp[key] = node; // HashMap记录下key和对应的结点
+            addToHead(node);    // 移动到头部
+            ++size;
+            if (size > capacity) {
+                // 如果链表大小大于缓存容量，删除尾部元素
+                DLinkedNode* removed = removeTail();
+                mp.erase(removed->key); // 从HashMap删除记录
+                delete removed;
+                --size;
+            }
+        } else {
+            // 如果存在，获取后直接移动到头部
+            mp[key]->val = value;
+            moveToHead(mp[key]);
+        }
+    }
+
+    // 在链表头部添加结点
+    void addToHead(DLinkedNode* node) {
+        node->next = head->next;
+        head->next->prev = node;
+        head->next = node;
+        node->prev = head;
+    }
+
+    // 从链表中移除结点
+    void removeNode(DLinkedNode* node) {
+        node->prev->next = node->next;
+        node->next->prev = node->prev;
+    }
+
+    // 将结点移动到头部，相当于删除该结点，添加一个相同结点到头部
+    void moveToHead(DLinkedNode* node) {
+        removeNode(node);
+        addToHead(node);
+    }
+
+    // 删除尾部结点，需要返回尾部结点，方便在HashMap中删除，也可以在此函数删除
+    DLinkedNode* removeTail() {
+        DLinkedNode* node = tail->prev;
+        removeNode(node);
+        return node;
+    }
+};
+```
+
+Java代码
+
+```Java
+// 构建双向链表
+class DLinkedNode {
+    public int key;
+    public int val;
+    public DLinkedNode prev;
+    public DLinkedNode next;
+    public DLinkedNode(){
+
+    }
+    public DLinkedNode(int key, int val) {
+        this.key = key;
+        this.val = val;
+    }
+}
+
+class LRUCache {
+    private DLinkedNode head;
+    private DLinkedNode tail;
+    private int capacity;
+    private int size;
+    private Map<Integer, DLinkedNode> map;
+
+    public LRUCache(int capacity) {
+        head = new DLinkedNode();
+        tail = new DLinkedNode();
+        head.next = tail;
+        tail.prev = head;
+        this.size = 0;
+        this.capacity = capacity;
+        map = new HashMap<>();
+    }
+    
+    public int get(int key) {
+        if (map.containsKey(key)) {
+            // 如果存在，获取后移动到头部
+            DLinkedNode node = map.get(key);
+            moveToHead(node);
+            return node.val;
+        }
+        return -1;
+    }
+    
+    public void put(int key, int value) {
+        if (map.containsKey(key)) {
+            // 如果存在，获取后直接移动到头部
+            DLinkedNode node = map.get(key);
+            node.val = value;
+            moveToHead(node);
+        } else {
+            // 缓存不存在key
+            DLinkedNode node = new DLinkedNode(key, value);
+            map.put(key, node); // HashMap记录下key和对应的结点
+            addToHead(node); // 移动到头部
+            ++size;
+            if (size > capacity) {
+                // 如果链表大小大于缓存容量，删除尾部元素
+                DLinkedNode removed = removeTail();
+                map.remove(removed.key); // 从HashMap删除记录
+                --size;
+            }
+        }
+    }
+
+    // 在链表头部添加结点
+    private void addToHead(DLinkedNode node) {
+        node.next = head.next;
+        head.next.prev = node;
+        head.next = node;
+        node.prev = head;
+    }
+
+    // 从链表中移除结点
+    private void removeNode(DLinkedNode node) {
+        node.next.prev = node.prev;
+        node.prev.next = node.next;
+    }
+
+    // 将结点移动到头部，相当于删除该结点，添加一个相同结点到头部
+    private void moveToHead(DLinkedNode node) {
+        removeNode(node);
+        addToHead(node);
+    }
+
+    // 删除尾部结点，需要返回尾部结点，方便在HashMap中删除，也可以在此函数删除
+    DLinkedNode removeTail() {
+        DLinkedNode node = tail.prev;
+        removeNode(node);
+        return node;
+    }
+}
+```
+
+### 032 有效的变位词
+
+方法：先记下所有字母的出现次数，本题只有26字母所以用固定数组就可以，对一个字符串，每出现一个字母，就再数组对应位置加1， 对于另一个字符串，每出现一个字母，就在数组相对应位置减1，最后判断数组内是否所有位置都为0.
+
+C++代码：
+
+```C++
+class Solution {
+public:
+    bool isAnagram(string s, string t) {
+        // 两字符串不一样长，一定不是变位词，直接返回
+        if (s == t || s.size() != t.size()) {
+            return false;
+        }
+        // 一个数组记下两个字符串出现次数的差值
+        vector<int> mp(26, 0);
+        for (int i = 0; i < s.size(); ++i) {
+            ++mp[s[i] - 'a'];
+            --mp[t[i] - 'a'];
+        }
+        // 遍历数组判断是够都为0
+        for (int i = 0; i < 26; ++i) {
+            if (mp[i] != 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+};
+```
+
+Java代码
+
+```Java
+class Solution {
+    public boolean isAnagram(String s, String t) {
+        // 两字符串不一样长，一定不是变位词，直接返回
+        if (s.equals(t) || s.length() != t.length()) {
+            return false;
+        }
+        // 一个数组记下两个字符串出现次数的差值
+        int[] cnt = new int[26];
+        for (int i = 0; i < s.length(); ++i) {
+            ++cnt[s.charAt(i) - 'a'];
+            --cnt[t.charAt(i) - 'a'];
+        }
+        // 遍历数组判断是够都为0
+        for (int i = 0; i < 26; ++i) {
+            if (cnt[i] != 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+}
+```
+
+### 033 变位词组
+
+方法：变位词所包含的字符和字符个数相同，所以可以用变位词的字母及其个数作为键，例如a2b1这样的键，使用一个HashMap的键存放每一种变位词，其值为对应的变位词列表。
+
+C++代码：
+
+```C++
+class Solution {
+public:
+    vector<vector<string>> groupAnagrams(vector<string>& strs) {
+        // key：同一个变位词的标识组合字符串。value:变位词列表。
+        unordered_map<string, vector<string>> mp;
+        // 对于每一个字符串，取出他们的固定标识作为键
+        for (string& str: strs) {
+            // 26个小写字母计数
+            vector<int> cs(26, 0);
+            for (char c: str) {
+                ++cs[c - 'a'];
+            }
+            // 用计数来拼接一个唯一的键
+            string key;
+            for (int i = 0; i < 26; ++i) {
+                if (cs[i] != 0) {
+                    key += (i + 'a');
+                    key += cs[i];   // 使用能够标识就可以，不一定要是数字
+                }
+            }
+            // 将字符串放进对应键的列表
+            mp[key].push_back(str);
+
+        }
+        // 从HashMap中取出变位词组放到答案中
+        vector<vector<string>> res;
+        for (auto [_, v]: mp) {
+            res.push_back(v);
+        }
+        return res;
+    }
+};
+```
+
+Java代码
+
+```Java
+class Solution {
+    public List<List<String>> groupAnagrams(String[] strs) {
+        // key：同一个变位词的标识组合字符串。value:变位词列表。
+        Map<String, List<String>> map = new HashMap<>();
+        // 对于每一个字符串，取出他们的固定标识作为键
+        for (String str: strs) {
+            // 26个小写字母计数
+            int[] cs = new int[26];
+            for (int i = 0; i < str.length(); ++i) {
+                ++cs[str.charAt(i) - 'a'];
+            }
+            // 用计数来拼接一个唯一的键
+            StringBuffer keyBuf = new StringBuffer();
+            for (int i = 0; i < 26; ++i) {
+                if (cs[i] != 0) {
+                    keyBuf.append((char)(i + 'a'));
+                    keyBuf.append(cs[i]);
+                }
+            }
+            // 将字符串放进对应键的列表
+            String key = keyBuf.toString();
+            List<String> list = map.getOrDefault(key, new ArrayList<String>());
+            list.add(str);
+            map.put(key, list);
+        }
+        // 返回HashMap内所有的值
+        return new ArrayList<List<String>>(map.values());
+    }
+}
+```
+
+### 034 外星语言是否排序
+
+方法：先用一个字典记下外星语言的字母顺序，然后使用这个字典映射，就相当于还原了原来的字母顺序。然后，对所有单词两两比较。
+
+C++代码：
+
+```C++
+class Solution {
+public:
+    bool isAlienSorted(vector<string>& words, string order) {
+        int n = words.size();
+        // 记下外星语言的字母顺序，之后使用这个字典，相当于还原了正常字母顺序
+        vector<int> v(26);
+        for (int i = 0; i < 26; ++i) {
+            v[order[i] - 'a'] = i;
+        }
+        // 对所有单词两两判断
+        for (int i = 1; i < n; ++i) {
+            bool flag = true; // 用于判断是否一个词是另一个的前缀
+            for (int j = 0; j < words[i].size() && j < words[i-1].size(); ++j) {
+                if (v[words[i][j]-'a'] < v[words[i-1][j]-'a']) {
+                    // 如果字符顺序不符合字典序直接返回
+                    return false;
+                } else if (v[words[i][j]-'a'] > v[words[i-1][j]-'a']) {
+                    // 符合字典序，跳出循环
+                    flag = false;   // 此时没有前缀关系
+                    break;
+                }
+            }
+            // 如果一个词是另一个词前缀，则判断前一个词长度是否比后一个长
+            if (flag) {
+                if (words[i].size() < words[i-1].size()) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+};
+```
+
+Java代码
+
+```Java
+class Solution {
+    public boolean isAlienSorted(String[] words, String order) {
+        int n = words.length;
+        // 记下外星语言的字母顺序，之后使用这个字典，相当于还原了正常字母顺序
+        int[] dict = new int[26];
+        for (int i = 0; i < order.length(); ++i) {
+            dict[order.charAt(i) - 'a'] = i;
+        }
+        // 对所有单词两两判断
+        for (int i = 1; i < n; ++i) {
+            boolean flag = true; // 用于判断是否一个词是另一个的前缀
+            for (int j = 0; j < words[i].length() && j < words[i-1].length(); ++j) {
+                if (dict[words[i].charAt(j) - 'a'] < dict[words[i-1].charAt(j) - 'a']) {
+                    // 如果字符顺序不符合字典序直接返回
+                    return false;
+                } else if (dict[words[i].charAt(j) - 'a'] > dict[words[i-1].charAt(j) - 'a']) {
+                    // 符合字典序，跳出循环
+                    flag = false;   // 此时没有前缀关系
+                    break;
+                }
+            }
+            // 如果一个词是另一个词前缀，则判断前一个词长度是否比后一个长
+            if (flag) {
+                if (words[i].length() < words[i-1].length()) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+}
+```
+
+### 035 最小时间差
+
+方法：将时间戳排序后，最小时间差必然出现在两个相邻的时间，或者两个首尾时间中。排序后遍历一遍即可
+
+C++代码：
+
+```C++
+class Solution {
+public:
+    int findMinDifference(vector<string>& timePoints) {
+        int res = INT_MAX;
+        int n = timePoints.size();
+        if (n > 1440) { // 如果时间点大于60 X 24 = 1440，必然出现重复时间点。
+            return 0;
+        }
+        // 排序时间，一样格式的数据，字符串排序顺序恰好和整型一样
+        sort(timePoints.begin(), timePoints.end());
+        // 两两计算时间差
+        int time = getMinutes(timePoints[0]);
+        for (int i = 1; i < n; ++i) {
+            int cur = getMinutes(timePoints[i]);
+            res = min(res, cur - time);
+            time = cur;
+        }
+        // 最小相邻时间差和首尾时间差进行比较
+        return min(res, getMinutes(timePoints[0]) - getMinutes(timePoints[n-1]) + 1440);
+    }
+
+    // 将时间变换成从00:00开始的分钟数。
+    int getMinutes(string& t) {
+        return (int(t[0] - '0') * 10 + int(t[1] - '0')) * 60 + int(t[3] - '0') * 10 + int(t[4] - '0');
+    }
+};
+```
+
+Java代码
+
+```Java
+class Solution {
+    public int findMinDifference(List<String> timePoints) {
+        int res = Integer.MAX_VALUE;
+        int n = timePoints.size();
+        // 如果时间点大于60 X 24 = 1440，必然出现重复时间点。
+        if (n > 1440) {
+            return 0;
+        }
+        // 排序时间，一样格式的数据，字符串排序顺序恰好和整型一样
+        Collections.sort(timePoints);
+        // 两两计算时间差
+        for (int i = 1; i < n; ++i) {
+            int time1 = getMinutes(timePoints.get(i));
+            int time2 = getMinutes(timePoints.get(i-1));
+            res = Math.min(res, time1 - time2);
+        }
+        // 最小相邻时间差和首尾时间差进行比较
+        return Math.min(res, getMinutes(timePoints.get(0)) - getMinutes(timePoints.get(n-1)) + 1440);
+    }
+
+    // 将时间变换成从00:00开始的分钟数。
+    public int getMinutes(String t) {
+        return ((t.charAt(0) - '0') * 10 + (t.charAt(1) - '0')) * 60
+                 + (t.charAt(3) - '0') * 10 + (t.charAt(4) - '0');
+    }
+}
+```
+
+## 栈
+
+常用方法：
+[单调栈](https://leetcode.cn/problems/largest-rectangle-in-histogram/solution/bao-li-jie-fa-zhan-by-liweiwei1419/)：单调栈是一种暴力解法的优化方法，用于找到对应数值呈单调形态。
+
+```C++
+while () {
+    while (!stack.empty() && nums[stk.top()] > nums[i]) {
+        ...
+        stack.pop();
+        ...
+    }
+    ...
+    stack.push(i);
+    ...
+}
+```
+
+### 036 后缀表达式
+
+方法：遍历表达式，如果是数字，则放到栈中，如果是运算符，则取出两个数进行运算，再将结果放到栈中。最后的结果就是栈中的唯一一个（位于栈顶）元素
+
+C++代码：
+
+```C++
+class Solution {
+public:
+    int evalRPN(vector<string>& tokens) {
+        stack<int> stk;
+        for (string s: tokens) {
+            if (s == "+" || s == "-" || s == "*" || s=="/") {
+                // 如果是运算符，取出两个数进行运算
+                int num1 = stk.top();
+                stk.pop();
+                int num2 = stk.top();
+                stk.pop();
+                // 根据运算符进行计算
+                if (s == "+") {
+                    stk.push(num2 + num1);
+                } else if (s == "-") {
+                    stk.push(num2 - num1);
+                } else if (s == "*") {
+                    stk.push(num2 * num1);
+                } else if (s == "/") {
+                    stk.push(num2 / num1);
+                }
+            } else {
+                // 如果是数字，直接放到栈中
+                stk.push(stoi(s));
+            }
+        }
+        return stk.top();
+    }
+};
+```
+
+Java代码
+
+```Java
+class Solution {
+    public int evalRPN(String[] tokens) {
+        Deque<Integer> stack = new LinkedList<>();
+        for (String token: tokens) {
+            if ("+".equals(token) || "-".equals(token) || "*".equals(token) || "/".equals(token)) {
+                 // 如果是运算符，取出两个数进行运算
+                int num2 = stack.pop();// 注意顺序
+                int num1 = stack.pop();
+                // 根据运算符进行计算
+                switch(token) {
+                    case "+":
+                        stack.push(num1 + num2);
+                        break;
+                    case "-":
+                        stack.push(num1 - num2);
+                        break;
+                    case "*":
+                        stack.push(num1 * num2);
+                        break;
+                    case "/":
+                        stack.push(num1 / num2);
+                        break;
+                }
+            } else {
+                // 如果是数字，直接放到栈中
+                stack.push(Integer.parseInt(token));
+            }
+        }
+        return stack.pop();
+    }
+}
+```
+
+### 037 小行星碰撞
+
+方法：
+
+C++代码：
+
+```C++
+
+```
+
+Java代码
+
+```Java
+
+```
+
+### 038 每日温度
+
+方法：
+
+C++代码：
+
+```C++
+
+```
+
+Java代码
+
+```Java
+
+```
+
+### 039 直方图最大矩形面积
+
+方法：
+
+C++代码：
+
+```C++
+
+```
+
+Java代码
+
+```Java
+
+```
+
+### 040 矩阵中最大的矩形
+
+方法：
+
+C++代码：
+
+```C++
+
+```
+
+Java代码
+
+```Java
+
+```
