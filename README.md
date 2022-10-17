@@ -2842,7 +2842,8 @@ class Solution {
 [单调栈](https://leetcode.cn/problems/largest-rectangle-in-histogram/solution/bao-li-jie-fa-zhan-by-liweiwei1419/)：单调栈是一种暴力解法的优化方法，用于找到对应数值呈单调形态。
 
 ```C++
-while () {
+for (int i = 0; i < n; ++i) 或
+while (i < n) {
     while (!stack.empty() && nums[stk.top()] > nums[i]) {
         ...
         stack.pop();
@@ -2930,53 +2931,664 @@ class Solution {
 
 ### 037 小行星碰撞
 
-方法：
+方法：使用栈模拟碰撞，对于每个遍历到的小行星，使用一个变量记录它会不会爆炸。如果小行星存在且向负方向移动，且栈顶元素向正方向移动，则两行星会碰撞，留下大的行星，知道本行星被比它大的击碎或击碎所有致栈顶为空。其他情况，不会碰撞，直接放入栈中。
 
 C++代码：
 
 ```C++
-
+class Solution {
+public:
+    vector<int> asteroidCollision(vector<int>& asteroids) {
+        vector<int> st;
+        for (int a: asteroids) {
+            bool alive = true;
+            // 如果小行星存在且向负方向移动，且栈顶元素向正方向移动
+            while (alive && a < 0 && !st.empty() && st.back() > 0) {
+                alive = st.back() < -a; // 判断哪个行星更大，即当前能否存活
+                // 如果存活，将栈顶行星击碎，等号是同归于尽
+                if (st.back() <= -a) {
+                    st.pop_back();
+                }
+            }
+            // 如果还存活，放到栈中。
+            if (alive) {
+                st.push_back(a);
+            }
+        }
+        return st;
+    }
+};
 ```
 
 Java代码
 
 ```Java
-
+class Solution {
+    public int[] asteroidCollision(int[] asteroids) {
+        Deque<Integer> stack = new LinkedList<>();
+        for (int a: asteroids) {
+            boolean alive = true;
+            // 如果小行星存在且向负方向移动，且栈顶元素向正方向移动
+            while(alive && a < 0 && !stack.isEmpty() && stack.peek() > 0) {
+                alive = stack.peek() < -a;// 判断哪个行星更大，即当前能否存活
+                // 如果存活，将栈顶行星击碎，等号是同归于尽
+                if (stack.peek() <= -a) {
+                    stack.pop();
+                }
+            }
+            // 如果还活着，放到栈中
+            if (alive) {
+                stack.push(a);
+            }
+        }
+        // 将栈中的元素，逆着放回答案数组
+        int size = stack.size();
+        int[] res = new int[size];
+        for (int i = size - 1; i >= 0; --i) {
+            res[i] = stack.pop();
+        }
+        return res;
+    }
+}
 ```
 
 ### 038 每日温度
 
-方法：
+方法：使用单调栈，栈中温度递减，栈内存放温度数组的下标（日期），当温度更高时，逐个弹出并记下每个弹出的日期距更高温度的距离
 
 C++代码：
 
 ```C++
-
+class Solution {
+public:
+    vector<int> dailyTemperatures(vector<int>& temperatures) {
+        int n = temperatures.size();
+        vector<int> res(n);
+        stack<int> st;
+        for (int i = 0; i < n; ++i) {
+            // 当温度不减，出现更高温度
+            while (!st.empty() && temperatures[i] > temperatures[st.top()]) {
+                int idx = st.top();
+                res[idx] = i - idx;// 记下栈中弹出的日期距离此时更高温度的距离
+                st.pop();
+            }
+            st.push(i);
+        }
+        return res;
+    }
+};
 ```
 
 Java代码
 
 ```Java
-
+class Solution {
+    public int[] dailyTemperatures(int[] temperatures) {
+        int n = temperatures.length;
+        int[] res = new int[n];
+        Deque<Integer> stack = new ArrayDeque<>();
+        for (int i = 0; i < n; ++i) {
+            // 当温度不减，出现更高温度
+            while (!stack.isEmpty() && temperatures[i] > temperatures[stack.peek()]) {
+                int idx = stack.pop();
+                res[idx] = i - idx;// 记下栈中弹出的日期距离此时更高温度的距离
+            }
+            stack.push(i);
+        }
+        return res;
+    }
+}
 ```
 
 ### 039 直方图最大矩形面积
 
-方法：
+方法：对于每一列，找到以本列的高度，能够向两边扩展的最远距离，此时可以计算本列能够构成的矩形面积，对每一列计算能够构成的矩形面积，就能得到最大的面积。对于如何找到向两边扩展的距离，类似上一题，求比它低的第一个数距本列的距离，对左右两边分别使用单调栈，存到两个数组中。
 
 C++代码：
 
 ```C++
-
+class Solution {
+public:
+    int largestRectangleArea(vector<int>& heights) {
+        int res = 0;
+        int n = heights.size();
+        stack<int> st;
+        // 分别记下左边和右边可延伸到的位置,默认左边为数组头前一个位置，右边为数组尾后一个位置
+        vector<int> left(n);
+        vector<int> right(n, n);
+        for (int i = 0; i < n; ++i) {
+            // 单调栈，当栈内元素不递增时，记下左边的列距离当前列距离，
+            // 当前列也就是左边列能向右扩展的最大距离
+            while (!st.empty() && heights[i] < heights[st.top()]) {
+                right[st.top()] = i;
+                st.pop();
+            }
+            // 因为单调栈的递增性质，当前下标左边的延伸位置，是栈顶的记录的下标
+            // 这里也可以类似上面，再进行一次从右往左遍历记下左边的延伸位置
+            left[i] = st.empty()? -1: st.top();
+            st.push(i);
+        }
+        // 对每一列，计算能够向两边构造的矩形面积
+        for (int i = 0; i < n; ++i) {
+            res = max(res, (right[i] - left[i] - 1) * heights[i]);
+        }
+        return res;
+    }
+};
 ```
 
 Java代码
 
 ```Java
-
+class Solution {
+    public int largestRectangleArea(int[] heights) {
+        int n = heights.length;
+        // 分别记下左边和右边可延伸到的位置,默认左边为数组头前一个位置，右边为数组尾后一个位置
+        int[] left = new int[n];
+        int[] right = new int[n];
+        Arrays.fill(right, n);
+        Deque<Integer> stack = new ArrayDeque<>();
+        for (int i = 0; i < n; ++i) {
+            // 单调栈，当栈内元素不递增时，记下左边的列距离当前列距离，
+            // 当前列也就是左边列能向右扩展的最大距离
+            while (!stack.isEmpty() && heights[i] < heights[stack.peek()]) {
+                int idx = stack.pop();
+                right[idx] = i;
+            }
+            // 因为单调栈的递增性质，当前下标左边的延伸位置，是栈顶的记录的下标
+            // 这里也可以类似上面，再进行一次从右往左遍历记下左边的延伸位置
+            left[i] = stack.isEmpty()? -1: stack.peek();
+            stack.push(i);
+        }
+        int res = 0;
+        // 对每一列，计算能够向两边构造的矩形面积
+        for (int i = 0; i < n; ++i) {
+            res = Math.max(res, (right[i] - left[i] - 1) * heights[i]);
+        }
+        return res;
+    }
+}
 ```
 
 ### 040 矩阵中最大的矩形
+
+方法：对于每一行，计算每一行作为直方图x轴的最大矩形面积。
+
+C++代码：
+
+```C++
+class Solution {
+public:
+    int maximalRectangle(vector<string>& matrix) {
+        int m = matrix.size();
+        if (m == 0) {
+            return 0;
+        }
+        int n = matrix[0].size();
+        int res = 0;
+        vector<int> heights(n, 0);
+        // 从第0行开始，计算有1构成的直方图的高度
+        for (int i = 0; i < m; ++i) {
+            for (int j = 0; j < n; ++j) {
+                if (matrix[i][j] == '1') {
+                    heights[j] += matrix[i][j] - '0';
+                } else {
+                    heights[j] = 0;
+                }
+            }
+            // 以当前行作为x坐标轴，计算直方图最大矩形面积
+            res = max(res, largestRectangleArea(heights));
+        }   
+        return res;
+    }
+
+    // 上一题计算直方图最大矩形面积完全相同的代码
+    int largestRectangleArea(vector<int>& heights) {
+        int res = 0;
+        int n = heights.size();
+        stack<int> st;
+        vector<int> left(n);
+        vector<int> right(n, n);
+        for (int i = 0; i < n; ++i) {
+            while (!st.empty() && heights[i] < heights[st.top()]) {
+                right[st.top()] = i;
+                st.pop();
+            }
+            left[i] = st.empty()? -1: st.top();
+            st.push(i);
+        }
+        for (int i = 0; i < n; ++i) {
+            res = max(res, (right[i] - left[i] - 1) * heights[i]);
+        }
+        return res;
+    }
+};
+```
+
+Java代码
+
+```Java
+class Solution {
+    public int maximalRectangle(String[] matrix) {
+        int m = matrix.length;
+        if (m == 0) {
+            return 0;
+        }
+        int n = matrix[0].length();
+        int res = 0;
+        int[] heights = new int[n];
+        // 从第0行开始，计算有1构成的直方图的高度
+        for (int i = 0; i < m; ++i) {
+            for (int j = 0; j < n; ++j) {
+                if (matrix[i].charAt(j) == '1') {
+                    heights[j] += matrix[i].charAt(j) - '0';
+                } else {
+                    heights[j] = 0;
+                }
+            }
+            // 以当前行作为x坐标轴，计算直方图最大矩形面积
+            res = Math.max(res, largestRectangleArea(heights));
+        }   
+        return res;
+    }
+
+    // 上一题计算直方图最大矩形面积完全相同的代码
+    public int largestRectangleArea(int[] heights) {
+        int n = heights.length;
+        int[] left = new int[n];
+        int[] right = new int[n];
+        Arrays.fill(right, n);
+        Deque<Integer> stack = new ArrayDeque<>();
+        for (int i = 0; i < n; ++i) {
+            while (!stack.isEmpty() && heights[i] < heights[stack.peek()]) {
+                int idx = stack.pop();
+                right[idx] = i;
+            }
+            left[i] = stack.isEmpty()? -1: stack.peek();
+            stack.push(i);
+        }
+        int res = 0;
+        for (int i = 0; i < n; ++i) {
+            res = Math.max(res, (right[i] - left[i] - 1) * heights[i]);
+        }
+        return res;
+    }
+}
+```
+
+## 队列
+
+常用于二叉树的层次遍历
+
+```C++
+queue.push(root)
+while (!queue.empty()) {
+    int n =queue.size();
+    for (int i = 0; i < n; ++i) {
+        TreeNode* node = queue.front();
+        queue.pop();
+        ...
+        if (node->left != nullptr) {
+            queue.push(node->left);
+        }
+        ...
+        if (node->right != nullptr) {
+            queue.push(node->right);
+        }
+        ...
+    }
+}
+```
+
+### 041 滑动窗口的平均值
+
+方法：使用一个队列计算这个窗口，用一个变量记录窗口内元素的和，每次滑动，总和减去移除的值，加上移入的值，求平均值用总和除队列大小即可
+
+C++代码：
+
+```C++
+class MovingAverage {
+public:
+    /** Initialize your data structure here. */
+    queue<int> q;   // 队列
+    int size;   // 滑动窗口的大小
+    double sum; // 队列元素和
+    MovingAverage(int size): size(size), sum(0) {
+    }
+    
+    double next(int val) {
+        if (q.size() < size) {
+            // 队列大小小于窗口，只加入元素
+            q.push(val);
+            sum += val;
+            return sum / q.size();
+        } else {
+            // 队列大小达到窗口大小，加入一个移除一个
+            sum -= q.front();
+            q.pop();
+            sum += val;
+            q.push(val);
+        }
+        return sum / size;
+    }
+};
+```
+
+Java代码
+
+```Java
+class MovingAverage {
+    public int size;
+    public double sum;
+    Queue<Integer> queue;
+    /** Initialize your data structure here. */
+    public MovingAverage(int size) {
+        this.queue = new ArrayDeque<Integer>();
+        this.size = size;
+        this.sum = 0;
+    }
+    
+    public double next(int val) {
+        // 队列大小达到窗口大小，移除一个
+        if (queue.size() == size) {
+            sum -= queue.poll();
+        }
+        queue.offer(val);
+        sum += val;
+        return sum / queue.size();
+    }
+}
+```
+
+### 042 最近请求次数
+
+方法：使用一个队列记下每次请求，当队头的元素时间小于当前时间减3000，则出队
+
+C++代码：
+
+```C++
+class RecentCounter {
+public:
+    queue<int> q;
+    RecentCounter() {
+    }
+    
+    int ping(int t) {
+        q.push(t);
+        // 当队头的元素时间小于当前时间减3000，则出队
+        while (q.front() < t - 3000) {
+            q.pop();
+        }
+        return q.size();
+    }
+};
+```
+
+Java代码
+
+```Java
+class RecentCounter {
+    public Queue<Integer> queue;
+    public RecentCounter() {
+        queue = new ArrayDeque<>();
+    }
+    
+    public int ping(int t) {
+        queue.offer(t);
+        // 当队头的元素时间小于当前时间减3000，则出队
+        while (queue.peek() < t - 3000) {
+            queue.poll();
+        }
+        return queue.size();
+    }
+}
+```
+
+### 043 往完全二叉树添加结点
+
+方法：使用一个队列按照层次遍历的方式，存放完全二叉树的叶子节点或只有左子树的节点，在往完全二叉树添加结点时，从队列头取出元素作为父节点，接上添加的结点，并将此结点也入队
+
+C++代码：
+
+```C++
+class CBTInserter {
+public:
+    TreeNode* root;
+    queue<TreeNode*> candidate; // 候选插入结点的父节点队列
+    CBTInserter(TreeNode* root): root(root) {
+        queue<TreeNode*> q;
+        q.push(root);
+        // 按层次遍历，将完全二叉树最后几个可以插入的节点加入队列
+        while (!q.empty()) {
+            TreeNode* node = q.front();
+            q.pop();
+            if (node->left != nullptr) {
+                q.push(node->left);
+            }
+            if (node->right != nullptr) {
+                q.push(node->right);
+            }
+            // 叶节点或右节点为空的节点
+            if (node->left == nullptr || node->right == nullptr) {
+                candidate.push(node);
+            }
+        }
+    }
+    
+    int insert(int v) {
+        TreeNode* node = new TreeNode(v);
+        // 队头是插入结点的父节点
+        TreeNode* father = candidate.front();
+        int res = father->val;
+        if (father->left == nullptr) {
+            // 左子树为空，是叶节点，直接连接
+            father->left = node;
+        } else {
+            // 右节点为空，接上后此结点左右子树不空，弹出队列
+            father->right = node;
+            candidate.pop();
+        }
+        // 队列加入当前节点
+        candidate.push(node);
+        return res;
+    }
+    
+    TreeNode* get_root() {
+        return root;
+    }
+};
+```
+
+Java代码
+
+```Java
+class CBTInserter {
+    public TreeNode root;
+    Queue<TreeNode> candidate;// 候选插入结点的父节点队列
+    public CBTInserter(TreeNode root) {
+        this.root = root;
+        candidate = new ArrayDeque<>();
+        Queue<TreeNode> queue = new ArrayDeque<>();
+        queue.offer(root);
+        // 按层次遍历，将完全二叉树最后几个可以插入的节点加入队列
+        while (!queue.isEmpty()) {
+            TreeNode node = queue.poll();
+            if (node.left != null) {
+                queue.offer(node.left);
+            }
+            if (node.right != null) {
+                queue.offer(node.right);
+            }
+            // 叶节点或右节点为空的节点
+            if (node.left == null || node.right == null) {
+                candidate.offer(node);
+            }
+        }
+    }
+    
+    public int insert(int v) {
+        TreeNode node = new TreeNode(v);
+        // 队头是插入结点的父节点
+        TreeNode father = candidate.peek();
+        int res = father.val;
+        if (father.left == null) {
+            // 左子树为空，是叶节点，直接连接
+            father.left = node;
+        } else {
+            // 右节点为空，接上后此结点左右子树不空，弹出队列
+            father.right = node;
+            candidate.poll();
+        }
+        // 队列加入当前节点
+        candidate.offer(node);
+        return res;
+    }
+    
+    public TreeNode get_root() {
+        return root;
+    }
+}
+```
+
+### 044 二叉树每层的最大值
+
+方法：按层次遍历，在每层去最大值加到结果数组中
+
+C++代码：
+
+```C++
+class Solution {
+public:
+    vector<int> largestValues(TreeNode* root) {
+        queue<TreeNode*> q;
+        q.push(root);
+        vector<int> res;
+        if (root == nullptr) {
+            return res;
+        }
+        while (!q.empty()) {
+            // 层次遍历，需要先记下每一层的大小
+            int n = q.size();
+            int maxVal = INT_MIN;
+            for (int i = 0; i < n; ++i) {
+                TreeNode* node = q.front();
+                q.pop();
+                // 记录每一层的最大值
+                maxVal = max(maxVal, node->val);
+                if (node->left != nullptr) {
+                    q.push(node->left);
+                }
+                if (node->right != nullptr) {
+                    q.push(node->right);
+                }
+            }
+            // 遍历完一层，将最大值加到结果数组中
+            res.push_back(maxVal);
+        }
+        return res;
+    }
+};
+```
+
+Java代码
+
+```Java
+class Solution {
+    public List<Integer> largestValues(TreeNode root) {
+        Queue<TreeNode> queue = new ArrayDeque<>();
+        List<Integer> res = new ArrayList<>();
+        if (root == null) {
+            return res;
+        }
+        queue.offer(root);
+        while (!queue.isEmpty()) {
+            // 层次遍历，需要先记下每一层的大小
+            int n = queue.size();
+            int maxVal = Integer.MIN_VALUE;
+            for (int i = 0; i < n; ++i) {
+                TreeNode node = queue.poll();
+                // 记录每一层的最大值
+                maxVal = Math.max(maxVal, node.val);
+                if (node.left != null) {
+                    queue.offer(node.left);
+                }
+                if (node.right != null) {
+                    queue.offer(node.right);
+                }
+            }
+            // 遍历完一层，将最大值加到结果数组中
+            res.add(maxVal);
+        }
+        return res;
+    }
+}
+```
+
+### 045 二叉树最底层最左边的值
+
+方法：层次遍历，每次都取每一层第一个名，到最后一层就是最后一层的第一个
+
+C++代码：
+
+```C++
+class Solution {
+public:
+    int findBottomLeftValue(TreeNode* root) {
+        int res;
+        queue<TreeNode*> q;
+        q.push(root);
+        while (!q.empty()) {
+            int n = q.size();
+            for (int i = 0; i < n; ++i) {
+                TreeNode* node = q.front();
+                q.pop();
+                // 每次都取每一层第一个名，到最后一层就是最后一层的第一个
+                if (i == 0) {
+                    res = node->val;
+                }
+                if (node->left != nullptr) {
+                    q.push(node->left);
+                }
+                if (node->right != nullptr) {
+                    q.push(node->right);
+                }
+            }
+        }
+        return res;
+    }
+};
+```
+
+Java代码
+
+```Java
+class Solution {
+    public int findBottomLeftValue(TreeNode root) {
+        Queue<TreeNode> queue = new ArrayDeque<>();
+        int res = 0;
+        queue.offer(root);
+        while (!queue.isEmpty()) {
+            // 层次遍历，需要先记下每一层的大小
+            int n = queue.size();
+            for (int i = 0; i < n; ++i) {
+                TreeNode node = queue.poll();
+                if (i == 0) {
+                    res = node.val;
+                }
+                if (node.left != null) {
+                    queue.offer(node.left);
+                }
+                if (node.right != null) {
+                    queue.offer(node.right);
+                }
+            }
+        }
+        return res;
+    }
+}
+```
+
+### 046 二叉树的右侧视图
 
 方法：
 
